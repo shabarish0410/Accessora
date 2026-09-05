@@ -14,6 +14,7 @@ import { Visitor, Purpose, PURPOSE, C, genTempId } from "../types";
 import { BackBar, BigBtn } from "./Atoms";
 import { VoiceTextInput } from "./VoiceTextInput";
 import { VisitorService } from "../services/visitors";
+import { TranslationService } from "../services/TranslationService";
 import { supabase } from "../services/supabase";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -515,6 +516,7 @@ export function AddVisitorFlow({
   const [reason, setReason] = useState("");
   const [purpose, setPurpose] = useState<Purpose | null>(null);
   const [mobile, setMobile] = useState("");
+  const [inputLanguage, setInputLanguage] = useState<"English" | "Hindi" | "Telugu">("English");
 
   // Submission
   const [submitting, setSubmitting] = useState(false);
@@ -544,15 +546,24 @@ export function AddVisitorFlow({
     setSmsStatus("pending");
 
     try {
-      // 1. Create visitor
+      // 1. Translate Purpose and Origin (Name remains untouched)
+      const translatedReason = await TranslationService.translate(reason.trim(), inputLanguage);
+      const translatedOrigin = await TranslationService.translate(origin.trim(), inputLanguage);
+
+      // 2. Create visitor
       const visitorId = await VisitorService.createVisitor({
         tempId: tempId,
         name: name.trim(),
         purpose,
-        reason: reason.trim() || undefined,
+        reason: translatedReason || undefined,
         mobile,
-        origin: origin.trim() || "Not specified",
-        status: "pending"
+        origin: translatedOrigin || "Not specified",
+        status: "pending",
+        purposeOriginal: reason.trim() || undefined,
+        purposeEnglish: translatedReason || undefined,
+        originOriginal: origin.trim() || undefined,
+        originEnglish: translatedOrigin || "Not specified",
+        inputLanguage: inputLanguage,
       });
 
       if (!visitorId) {
@@ -640,6 +651,28 @@ export function AddVisitorFlow({
   return (
     <View style={s.container}>
       <BackBar title="New Visitor Check-in" onBack={handleBack} />
+
+      {/* Language Selector */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: 20, paddingTop: 10, gap: 10, justifyContent: 'center' }}>
+        {(["English", "Hindi", "Telugu"] as const).map(lang => (
+          <TouchableOpacity 
+            key={lang} 
+            onPress={() => setInputLanguage(lang)}
+            style={{
+              paddingVertical: 6,
+              paddingHorizontal: 16,
+              borderRadius: 20,
+              backgroundColor: inputLanguage === lang ? C.primary : C.surface,
+              borderWidth: 1,
+              borderColor: inputLanguage === lang ? C.primary : C.border,
+            }}
+          >
+            <Text style={{ color: inputLanguage === lang ? '#fff' : C.textSecondary, fontWeight: '600' }}>
+              {lang === 'Hindi' ? 'हिंदी' : lang === 'Telugu' ? 'తెలుగు' : 'English'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {/* Progress bar */}
       <View style={s.progressRow}>

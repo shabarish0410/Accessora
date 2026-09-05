@@ -165,10 +165,15 @@ function ChairApp({ onSignOut, user }: { onSignOut: () => void, user: AppUser })
     }
   });
 
-  const decide = async (id: string | number, d: 'accepted' | 'waiting' | 'rejected' | 'approved', holdMessage?: string) => {
+  const decide = async (
+    id: string | number, 
+    d: 'accepted' | 'waiting' | 'rejected' | 'approved', 
+    chairmanFeedback?: string, 
+    holdDuration?: string
+  ) => {
     let decBy = `Chairman ${user.fullName || user.username}`;
-    if (holdMessage) decBy += ` (Hold: ${holdMessage})`;
-    await VisitorService.updateStatus(id, d, decBy);
+    const chairmanDecision = d === 'approved' ? 'accepted' : d;
+    await VisitorService.updateStatus(id, d, decBy, chairmanDecision, chairmanFeedback, holdDuration);
   };
 
   const markExit = async (id: string | number) => {

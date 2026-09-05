@@ -25,6 +25,15 @@ export function VisitorDetail({
     ...(visitor.decidedBy ? [{ icon: '✍️', label: 'Decided by', val: visitor.decidedBy }] : []),
   ];
 
+  // Translations
+  const originDisplay = visitor.originEnglish || visitor.origin;
+  const originOriginal = visitor.originOriginal;
+  const purposeDisplay = visitor.purposeEnglish || visitor.purpose;
+  const purposeOriginal = visitor.purposeOriginal;
+  
+  // Chairman Feedback Banner
+  const showChairmanFeedback = !!visitor.chairmanDecision;
+
   return (
     <View style={styles.container}>
       <BackBar title="Visitor Details" onBack={onBack} />
@@ -36,7 +45,10 @@ export function VisitorDetail({
             <View style={styles.headerRow}>
               <View style={styles.headerInfo}>
                 <Text style={styles.name}>{visitor.name}</Text>
-                <Text style={styles.origin}>{visitor.origin}</Text>
+                <Text style={styles.origin}>{originDisplay}</Text>
+                {originOriginal && originOriginal !== originDisplay && (
+                  <Text style={styles.originalText}>Original: {originOriginal}</Text>
+                )}
               </View>
               <Text style={styles.tempId}>#{visitor.tempId}</Text>
             </View>
@@ -44,8 +56,54 @@ export function VisitorDetail({
               <PurposePill purpose={visitor.purpose} />
               <StatusPill status={visitor.status} />
             </View>
+            {purposeDisplay && purposeDisplay !== visitor.purpose && (
+               <View style={{ marginTop: 12 }}>
+                 <Text style={{ fontSize: 14, fontWeight: '700', color: C.textPrimary }}>Purpose Description:</Text>
+                 <Text style={{ fontSize: 14, color: C.textSecondary, marginTop: 4 }}>{purposeDisplay}</Text>
+                 {purposeOriginal && purposeOriginal !== purposeDisplay && (
+                    <Text style={[styles.originalText, { marginTop: 2 }]}>Original: {purposeOriginal}</Text>
+                 )}
+               </View>
+            )}
+            {!purposeDisplay && visitor.reason && (
+               <View style={{ marginTop: 12 }}>
+                 <Text style={{ fontSize: 14, fontWeight: '700', color: C.textPrimary }}>Purpose Description:</Text>
+                 <Text style={{ fontSize: 14, color: C.textSecondary, marginTop: 4 }}>{visitor.reason}</Text>
+               </View>
+            )}
           </View>
         </View>
+
+        {/* Chairman Feedback Prominent Section */}
+        {showChairmanFeedback && (
+          <View style={[styles.feedbackCard, 
+            visitor.chairmanDecision === 'accepted' ? { borderColor: C.success, backgroundColor: '#f6ffed' } :
+            visitor.chairmanDecision === 'rejected' ? { borderColor: C.error, backgroundColor: '#fff2f0' } :
+            { borderColor: C.warning, backgroundColor: '#fffbe6' }
+          ]}>
+            <Text style={[styles.feedbackTitle, 
+              visitor.chairmanDecision === 'accepted' ? { color: C.success } :
+              visitor.chairmanDecision === 'rejected' ? { color: C.error } :
+              { color: C.warning }
+            ]}>
+              {visitor.chairmanDecision === 'accepted' && '✅ Chairman Approved'}
+              {visitor.chairmanDecision === 'rejected' && '❌ Chairman Rejected'}
+              {visitor.chairmanDecision === 'waiting' && '⏳ Chairman placed visitor on Hold'}
+            </Text>
+            
+            {visitor.holdDuration && (
+              <Text style={styles.feedbackText}>Duration: {visitor.holdDuration}</Text>
+            )}
+            {visitor.chairmanFeedback && (
+              <Text style={styles.feedbackText}>Reason: {visitor.chairmanFeedback}</Text>
+            )}
+            {visitor.decisionAt && (
+              <Text style={[styles.feedbackText, { color: C.textMuted, fontSize: 12, marginTop: 4 }]}>
+                Decision time: {fmtTime(visitor.decisionAt)}
+              </Text>
+            )}
+          </View>
+        )}
 
         {/* Info Rows */}
         <View style={styles.infoCard}>
@@ -144,6 +202,27 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     fontSize: 22,
     color: C.primary,
+  },
+  originalText: {
+    fontSize: 12,
+    color: '#9ca3af',
+    fontStyle: 'italic',
+  },
+  feedbackCard: {
+    borderWidth: 2,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  feedbackTitle: {
+    fontWeight: '900',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  feedbackText: {
+    fontSize: 15,
+    color: C.textPrimary,
+    marginBottom: 4,
   },
   pillRow: {
     flexDirection: 'row',

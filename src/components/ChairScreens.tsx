@@ -12,13 +12,16 @@ export function QueueScreen({
   onRefresh,
 }: {
   visitors: Visitor[];
-  onDecide: (id: string | number, d: 'accepted' | 'waiting' | 'rejected', holdMessage?: string) => void;
+  onDecide: (id: string | number, d: 'accepted' | 'waiting' | 'rejected' | 'approved', chairmanFeedback?: string, holdDuration?: string) => void;
   onExit: (id: string | number) => void;
   onViewDetail: (id: string | number) => void;
   onRefresh?: () => void;
 }) {
   const [holdVisitorId, setHoldVisitorId] = useState<string | number | null>(null);
+  const [rejectVisitorId, setRejectVisitorId] = useState<string | number | null>(null);
   const [holdMessage, setHoldMessage] = useState<string>('');
+  const [rejectMessage, setRejectMessage] = useState<string>('');
+  const [holdDuration, setHoldDuration] = useState<string>('');
   const pending = visitors
     .filter((v) => v.status === 'pending')
     .sort((a, b) => effectivePriority(a) - effectivePriority(b));
@@ -74,23 +77,41 @@ export function QueueScreen({
                       <View style={styles.holdMenu}>
                         <TextInput
                           style={styles.holdInput}
-                          placeholder="e.g. 5 mins, 10 mins, or 12:30 PM"
+                          placeholder="Hold Reason (e.g. Currently unavailable)"
                           placeholderTextColor={C.textMuted}
                           value={holdMessage}
                           onChangeText={setHoldMessage}
                         />
                         <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
                           {['30 secs', '60 secs', '5 mins', '10 mins'].map((t) => (
-                            <TouchableOpacity key={t} onPress={() => setHoldMessage(t)} style={styles.quickTimeBtn}>
-                              <Text style={styles.quickTimeTxt}>{t}</Text>
+                            <TouchableOpacity key={t} onPress={() => setHoldDuration(t)} style={[styles.quickTimeBtn, holdDuration === t && { backgroundColor: C.primary, borderColor: C.primary }]}>
+                              <Text style={[styles.quickTimeTxt, holdDuration === t && { color: '#fff' }]}>{t}</Text>
                             </TouchableOpacity>
                           ))}
                         </View>
                         <View style={styles.actionRow}>
-                          <TouchableOpacity onPress={() => { onDecide(v.id, 'waiting', holdMessage); setHoldVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.warning }]}>
+                          <TouchableOpacity onPress={() => { onDecide(v.id, 'waiting', holdMessage, holdDuration); setHoldVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.warning }]}>
                             <Text style={styles.btnText}>Submit Hold</Text>
                           </TouchableOpacity>
                           <TouchableOpacity onPress={() => setHoldVisitorId(null)} style={[styles.decisionBtn, { backgroundColor: C.border }]}>
+                            <Text style={[styles.btnText, { color: C.textPrimary }]}>Cancel</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : rejectVisitorId === v.id ? (
+                      <View style={styles.holdMenu}>
+                        <TextInput
+                          style={styles.holdInput}
+                          placeholder="Rejection Reason (e.g. Meeting not approved)"
+                          placeholderTextColor={C.textMuted}
+                          value={rejectMessage}
+                          onChangeText={setRejectMessage}
+                        />
+                        <View style={styles.actionRow}>
+                          <TouchableOpacity onPress={() => { onDecide(v.id, 'rejected', rejectMessage); setRejectVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.error }]}>
+                            <Text style={styles.btnText}>Submit Reject</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => setRejectVisitorId(null)} style={[styles.decisionBtn, { backgroundColor: C.border }]}>
                             <Text style={[styles.btnText, { color: C.textPrimary }]}>Cancel</Text>
                           </TouchableOpacity>
                         </View>
@@ -100,10 +121,10 @@ export function QueueScreen({
                         <TouchableOpacity onPress={() => onDecide(v.id, 'accepted')} style={[styles.decisionBtn, { backgroundColor: C.success }]}>
                           <Text style={styles.btnText}>✓ Allow</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => { setHoldVisitorId(v.id); setHoldMessage(''); }} style={[styles.decisionBtn, { backgroundColor: C.warning }]}>
+                        <TouchableOpacity onPress={() => { setHoldVisitorId(v.id); setHoldMessage(''); setHoldDuration(''); setRejectVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.warning }]}>
                           <Text style={styles.btnText}>⏸ Hold</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => onDecide(v.id, 'rejected')} style={[styles.decisionBtn, { backgroundColor: C.error }]}>
+                        <TouchableOpacity onPress={() => { setRejectVisitorId(v.id); setRejectMessage(''); setHoldVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.error }]}>
                           <Text style={styles.btnText}>✕ Deny</Text>
                         </TouchableOpacity>
                       </View>

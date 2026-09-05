@@ -20,6 +20,15 @@ export interface Visitor {
   arrivalTime: Date;
   departureTime?: Date;
   decidedBy?: string;
+  chairmanDecision?: 'accepted' | 'rejected' | 'waiting';
+  chairmanFeedback?: string;
+  holdDuration?: string;
+  decisionAt?: Date;
+  purposeOriginal?: string;
+  purposeEnglish?: string;
+  originOriginal?: string;
+  originEnglish?: string;
+  inputLanguage?: string;
 }
 
 export const C = colors;

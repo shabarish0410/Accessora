@@ -34,22 +34,24 @@ serve(async (req) => {
       if (oldStatus !== newStatus && ["accepted", "rejected", "waiting"].includes(newStatus)) {
         targetRole = "guard";
         const name = payload.record.name;
-        const decidedBy = payload.record.decided_by || "Chairman";
+        // The edge function triggers on 'visitors' updates.
+        // We might not have the user's name joined, but we can assume decided_by is something like 'Chairman Rajan'
+        const decidedBy = payload.record.decided_by || 'Chairman';
         
-        let title = "";
-        let body = "";
-        if (newStatus === "accepted") {
-          title = "✅ Visitor Approved";
+        let title = '';
+        let body = '';
+        if (newStatus === 'accepted') {
+          title = '✅ Visitor Approved';
           body = `${decidedBy} has allowed ${name} to enter.`;
-        } else if (newStatus === "rejected") {
-          title = "❌ Visitor Rejected";
-          body = `${decidedBy} has denied ${name}'s visit.`;
-        } else if (newStatus === "waiting") {
-          title = "⏸ Visitor On Hold";
-          body = `${name} is still waiting for approval.`;
+        } else if (newStatus === 'rejected') {
+          title = '❌ Visitor Rejected';
+          body = `${decidedBy} rejected ${name}.\nReason: ${payload.record.chairman_feedback || 'Not provided'}`;
+        } else if (newStatus === 'waiting') {
+          title = '⏳ Visitor On Hold';
+          body = `${decidedBy} placed ${name} on Hold.\nTime: ${payload.record.hold_duration || 'Unknown'}\nReason: ${payload.record.chairman_feedback || 'Currently unavailable'}`;
         }
         
-        notificationPayload = { title, body, url: "/" };
+        notificationPayload = { title, body, url: '/' };
       }
     }
 

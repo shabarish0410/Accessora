@@ -46,6 +46,11 @@ export const VisitorService = {
         mobile: visitorData.mobile,
         origin: visitorData.origin,
         status: visitorData.status || 'pending',
+        purpose_original: visitorData.purposeOriginal,
+        purpose_english: visitorData.purposeEnglish,
+        origin_original: visitorData.originOriginal,
+        origin_english: visitorData.originEnglish,
+        input_language: visitorData.inputLanguage,
       })
       .select('id')
       .single();
@@ -82,9 +87,21 @@ export const VisitorService = {
   },
 
   // Update visitor status
-  async updateStatus(id: string | number, status: string, decidedBy?: string): Promise<boolean> {
+  async updateStatus(
+    id: string | number,
+    status: string,
+    decidedBy?: string,
+    chairmanDecision?: 'accepted' | 'rejected' | 'waiting',
+    chairmanFeedback?: string,
+    holdDuration?: string
+  ): Promise<boolean> {
     const updates: any = { status };
     if (decidedBy) updates.decided_by = decidedBy;
+    if (chairmanDecision) updates.chairman_decision = chairmanDecision;
+    if (chairmanFeedback) updates.chairman_feedback = chairmanFeedback;
+    if (holdDuration) updates.hold_duration = holdDuration;
+    if (chairmanDecision) updates.decision_at = new Date().toISOString();
+
     if (status === 'completed' || status === 'rejected' || status === 'exited') {
       updates.departure_time = new Date().toISOString();
     }
@@ -142,5 +159,14 @@ function parseVisitor(row: any): Visitor {
     arrivalTime: new Date(row.arrival_time),
     departureTime: row.departure_time ? new Date(row.departure_time) : undefined,
     decidedBy: row.decided_by,
+    chairmanDecision: row.chairman_decision,
+    chairmanFeedback: row.chairman_feedback,
+    holdDuration: row.hold_duration,
+    decisionAt: row.decision_at ? new Date(row.decision_at) : undefined,
+    purposeOriginal: row.purpose_original,
+    purposeEnglish: row.purpose_english,
+    originOriginal: row.origin_original,
+    originEnglish: row.origin_english,
+    inputLanguage: row.input_language,
   };
 }
