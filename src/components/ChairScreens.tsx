@@ -140,7 +140,38 @@ export function QueueScreen({
               <SectionHead label={`On Hold (${onHold.length})`} />
               <View style={styles.list}>
                 {onHold.map((v) => (
-                  <VisitorRow key={v.id} visitor={v} onPress={() => onViewDetail(v.id)} />
+                  <View key={v.id} style={styles.card}>
+                    <VisitorRow visitor={v} onPress={() => onViewDetail(v.id)} />
+                    
+                    {rejectVisitorId === v.id ? (
+                      <View style={styles.decisionBlock}>
+                        <TextInput
+                          style={styles.reasonInput}
+                          placeholder="Reason for rejection..."
+                          value={rejectMessage}
+                          onChangeText={setRejectMessage}
+                          autoFocus
+                        />
+                        <View style={styles.actionRow}>
+                          <TouchableOpacity onPress={() => { onDecide(v.id, 'rejected', rejectMessage); setRejectVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.error }]}>
+                            <Text style={styles.btnText}>Submit Reject</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => setRejectVisitorId(null)} style={[styles.decisionBtn, { backgroundColor: C.border }]}>
+                            <Text style={[styles.btnText, { color: C.textPrimary }]}>Cancel</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={styles.actionRow}>
+                        <TouchableOpacity onPress={() => onDecide(v.id, 'accepted')} style={[styles.decisionBtn, { backgroundColor: C.success }]}>
+                          <Text style={styles.btnText}>✓ Allow</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => { setRejectVisitorId(v.id); setRejectMessage(''); setHoldVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.error }]}>
+                          <Text style={styles.btnText}>✕ Deny</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
                 ))}
               </View>
             </View>
