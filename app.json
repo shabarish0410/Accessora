@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "visitor-app-management",
+    "slug": "visitor-app-management",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow Visitor App Management to securely recognize user speech.",
+        "NSMicrophoneUsageDescription": "Allow Visitor App Management to access the microphone for speech recognition."
+      }
+    },
+    "plugins": [
+      "expo-asset",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Visitor App Management to access the microphone for speech recognition.",
+          "speechRecognitionPermission": "Allow Visitor App Management to securely recognize user speech."
+        }
+      ]
+    ],
+    "android": {
+      "package": "com.anonymous.visitorappmanagement"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "Visitor App Management",
+      "shortName": "Visitor App",
+      "themeColor": "#6c0b11",
+      "backgroundColor": "#ffffff",
+      "display": "standalone",
+      "startUrl": "/"
+    }
+  }
+}
