@@ -140,13 +140,13 @@ export function QueueScreen({
               <SectionHead label={`On Hold (${onHold.length})`} />
               <View style={styles.list}>
                 {onHold.map((v) => (
-                  <View key={v.id} style={styles.card}>
+                  <View key={v.id} style={styles.queueCard}>
                     <VisitorRow visitor={v} onPress={() => onViewDetail(v.id)} />
                     
                     {rejectVisitorId === v.id ? (
-                      <View style={styles.decisionBlock}>
+                      <View style={styles.holdMenu}>
                         <TextInput
-                          style={styles.reasonInput}
+                          style={styles.holdInput}
                           placeholder="Reason for rejection..."
                           value={rejectMessage}
                           onChangeText={setRejectMessage}
