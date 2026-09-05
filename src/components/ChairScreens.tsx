@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Modal, SafeAreaView, Dimensions } from 'react-native';
 import { Visitor, C, effectivePriority } from '../types';
 import { SectionHead } from './Atoms';
 import { VisitorRow } from './VisitorRow';
@@ -22,6 +22,8 @@ export function QueueScreen({
   const [holdMessage, setHoldMessage] = useState<string>('');
   const [rejectMessage, setRejectMessage] = useState<string>('');
   const [holdDuration, setHoldDuration] = useState<string>('');
+  const [dismissedVisitorId, setDismissedVisitorId] = useState<string | number | null>(null);
+  
   const pending = visitors
     .filter((v) => v.status === 'pending')
     .sort((a, b) => effectivePriority(a) - effectivePriority(b));
@@ -29,7 +31,89 @@ export function QueueScreen({
   const onHold = visitors.filter((v) => v.status === 'waiting');
   const inside = visitors.filter((v) => v.status === 'accepted');
 
+  const incomingVisitor = pending[0];
+  const showIncomingModal = incomingVisitor && incomingVisitor.id !== dismissedVisitorId;
+
   return (
+    <>
+      <Modal visible={!!showIncomingModal} animationType="slide" presentationStyle="formSheet">
+        {showIncomingModal && (
+          <SafeAreaView style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Incoming Visitor!</Text>
+                <Text style={styles.modalSub}>Requires your approval</Text>
+              </View>
+
+              <View style={styles.modalCard}>
+                <VisitorRow visitor={incomingVisitor} onPress={() => {}} />
+              </View>
+
+              {holdVisitorId === incomingVisitor.id ? (
+                <View style={styles.holdMenu}>
+                  <TextInput
+                    style={styles.holdInput}
+                    placeholder="Hold Reason (e.g. Currently unavailable)"
+                    placeholderTextColor={C.textMuted}
+                    value={holdMessage}
+                    onChangeText={setHoldMessage}
+                  />
+                  <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+                    {['30 secs', '60 secs', '5 mins', '10 mins'].map((t) => (
+                      <TouchableOpacity key={t} onPress={() => setHoldDuration(t)} style={[styles.quickTimeBtn, holdDuration === t && { backgroundColor: C.primary, borderColor: C.primary }]}>
+                        <Text style={[styles.quickTimeTxt, holdDuration === t && { color: '#fff' }]}>{t}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <View style={styles.actionRow}>
+                    <TouchableOpacity onPress={() => { onDecide(incomingVisitor.id, 'waiting', holdMessage, holdDuration); setHoldVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.warning }]}>
+                      <Text style={styles.btnText}>Submit Hold</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setHoldVisitorId(null)} style={[styles.decisionBtn, { backgroundColor: C.border }]}>
+                      <Text style={[styles.btnText, { color: C.textPrimary }]}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : rejectVisitorId === incomingVisitor.id ? (
+                <View style={styles.holdMenu}>
+                  <TextInput
+                    style={styles.holdInput}
+                    placeholder="Reason for rejection..."
+                    value={rejectMessage}
+                    onChangeText={setRejectMessage}
+                    autoFocus
+                  />
+                  <View style={styles.actionRow}>
+                    <TouchableOpacity onPress={() => { onDecide(incomingVisitor.id, 'rejected', rejectMessage); setRejectVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.error }]}>
+                      <Text style={styles.btnText}>Submit Reject</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setRejectVisitorId(null)} style={[styles.decisionBtn, { backgroundColor: C.border }]}>
+                      <Text style={[styles.btnText, { color: C.textPrimary }]}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={[styles.actionRow, { marginTop: 20 }]}>
+                  <TouchableOpacity onPress={() => onDecide(incomingVisitor.id, 'accepted')} style={[styles.decisionBtn, { backgroundColor: C.success }]}>
+                    <Text style={styles.btnText}>✓ Allow</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => { setHoldVisitorId(incomingVisitor.id); setHoldMessage(''); setHoldDuration(''); setRejectVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.warning }]}>
+                    <Text style={styles.btnText}>⏸ Hold</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => { setRejectVisitorId(incomingVisitor.id); setRejectMessage(''); setHoldVisitorId(null); }} style={[styles.decisionBtn, { backgroundColor: C.error }]}>
+                    <Text style={styles.btnText}>✕ Deny</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <TouchableOpacity onPress={() => setDismissedVisitorId(incomingVisitor.id)} style={styles.dismissBtn}>
+                <Text style={styles.dismissBtnTxt}>Dismiss to Queue</Text>
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        )}
+      </Modal>
+
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 48, gap: 16 }}>
       <View style={styles.header}>
         <View>
@@ -190,6 +274,7 @@ export function QueueScreen({
         </>
       )}
     </ScrollView>
+    </>
   );
 }
 
@@ -303,4 +388,48 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: C.textSecondary,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: C.primary,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'center',
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  modalTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  modalSub: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  modalCard: {
+    backgroundColor: C.surface,
+    padding: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 8,
+    marginBottom: 24,
+  },
+  dismissBtn: {
+    marginTop: 32,
+    padding: 16,
+    alignItems: 'center',
+  },
+  dismissBtnTxt: {
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '700',
+    fontSize: 16,
+  }
 });
