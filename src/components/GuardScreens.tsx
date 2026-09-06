@@ -248,7 +248,7 @@ export function HistoryScreen({ visitors, onViewDetail, onRefresh }: { visitors:
   );
 }
 
-export function GuardSettings({ onSignOut, user }: { onSignOut: () => void; user?: AppUser }) {
+export function GuardSettings({ onSignOut, user, onUpdateUser }: { onSignOut: () => void; user?: AppUser; onUpdateUser?: (user: AppUser) => void }) {
   const [notifSound, setNotifSound] = useState(true);
   const [vibration, setVibration] = useState(true);
 
@@ -257,6 +257,42 @@ export function GuardSettings({ onSignOut, user }: { onSignOut: () => void; user
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
+
+  // Edit Profile State
+  const [editFullName, setEditFullName] = useState(user?.fullName || '');
+  const [editUsername, setEditUsername] = useState(user?.username || '');
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [profileMsg, setProfileMsg] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      setEditFullName(user.fullName || '');
+      setEditUsername(user.username || '');
+    }
+  }, [user]);
+
+  const handleUpdateProfile = async () => {
+    if (!editFullName || !editUsername) {
+      setProfileMsg({ text: 'Please enter both full name and username', type: 'error' });
+      return;
+    }
+
+    setLoadingProfile(true);
+    setProfileMsg(null);
+    try {
+      await AuthService.updateProfile(editUsername, editFullName);
+      setProfileMsg({ text: 'Profile updated successfully!', type: 'success' });
+      
+      // Update global user state
+      if (user && onUpdateUser) {
+        onUpdateUser({ ...user, username: editUsername, fullName: editFullName });
+      }
+    } catch (e: any) {
+      setProfileMsg({ text: e.message || 'Failed to update profile', type: 'error' });
+    }
+    setLoadingProfile(false);
+  };
+
 
   const handleChangePassword = async () => {
     if (!oldPassword || !newPassword) {
@@ -319,6 +355,35 @@ export function GuardSettings({ onSignOut, user }: { onSignOut: () => void; user
         {user?.role === 'incharge' && (
            <SettingsRow label="🏢 Department" right={<Text style={{ fontSize: 13, color: C.textSecondary }}>Security HQ</Text>} last />
         )}
+      </SettingsCard>
+
+      <SettingsCard title="Edit Profile">
+        <View style={{ padding: 16, gap: 12 }}>
+          <Text style={{ fontWeight: '700', color: C.textPrimary, marginBottom: 4 }}>Profile Details</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor={C.textMuted}
+            value={editFullName}
+            onChangeText={setEditFullName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Username"
+            placeholderTextColor={C.textMuted}
+            autoCapitalize="none"
+            value={editUsername}
+            onChangeText={setEditUsername}
+          />
+          {profileMsg && (
+            <Text style={{ color: profileMsg.type === 'error' ? C.error : C.success, fontSize: 13 }}>
+              {profileMsg.type === 'error' ? '⚠️ ' : '✅ '}{profileMsg.text}
+            </Text>
+          )}
+          <TouchableOpacity onPress={handleUpdateProfile} disabled={loadingProfile} style={styles.changePwdBtn}>
+            {loadingProfile ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700' }}>Save Changes</Text>}
+          </TouchableOpacity>
+        </View>
       </SettingsCard>
 
       <SettingsCard title="Security">

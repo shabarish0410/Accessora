@@ -100,7 +100,7 @@ function useVisitors(activeOnly: boolean, onNotification?: (payload: any) => voi
   return { visitors, setVisitors, loading, refetch };
 }
 
-function GuardApp({ onSignOut, user }: { onSignOut: () => void; user: AppUser }) {
+function GuardApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void; user: AppUser; onUpdateUser: (user: AppUser) => void }) {
   const [tab, setTab] = useState<GuardTab>('home');
   const [screen, setScreen] = useState<'main' | 'add' | 'leaving' | 'lookup' | 'detail'>('main');
   const [activeVisitorId, setActiveVisitorId] = useState<string | number | null>(null);
@@ -177,7 +177,7 @@ function GuardApp({ onSignOut, user }: { onSignOut: () => void; user: AppUser })
       <View style={styles.mainContent}>
         {tab === 'home' && <GuardHome visitors={visitors} guardName={user.fullName || user.username} onAddVisitor={() => setScreen('add')} onLeaving={() => setScreen('leaving')} onLookup={() => setScreen('lookup')} onViewDetail={viewDetail} onExit={markExit} onRefresh={handleRefresh} />}
         {tab === 'history' && <HistoryScreen visitors={visitors} onViewDetail={viewDetail} onRefresh={handleRefresh} />}
-        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} />}
+        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} onUpdateUser={onUpdateUser} />}
       </View>
       <BottomNav
         tabs={GUARD_TABS}
@@ -191,7 +191,7 @@ function GuardApp({ onSignOut, user }: { onSignOut: () => void; user: AppUser })
   );
 }
 
-function ChairApp({ onSignOut, user }: { onSignOut: () => void, user: AppUser }) {
+function ChairApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void, user: AppUser, onUpdateUser: (user: AppUser) => void }) {
   const [tab, setTab] = useState<ChairTab>('queue');
   const [activeVisitorId, setActiveVisitorId] = useState<string | number | null>(null);
   const [incomingVisitor, setIncomingVisitor] = useState<any | null>(null);
@@ -270,7 +270,7 @@ function ChairApp({ onSignOut, user }: { onSignOut: () => void, user: AppUser })
           <QueueScreen visitors={visitors} onDecide={decide as any} onExit={markExit} onViewDetail={viewDetail} onRefresh={handleRefresh} />
         )}
         {tab === 'history' && <HistoryScreen visitors={visitors} onViewDetail={viewDetail} onRefresh={handleRefresh} />}
-        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} />}
+        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} onUpdateUser={onUpdateUser} />}
       </View>
       <BottomNav
         tabs={CHAIR_TABS}
@@ -284,14 +284,14 @@ function ChairApp({ onSignOut, user }: { onSignOut: () => void, user: AppUser })
   );
 }
 
-function InchargeApp({ onSignOut, user }: { onSignOut: () => void, user: AppUser }) {
+function InchargeApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void, user: AppUser, onUpdateUser: (user: AppUser) => void }) {
   const [tab, setTab] = useState<InchargeTab>('manage_guards');
 
   return (
     <View style={styles.appContainer}>
       <View style={styles.mainContent}>
         {tab === 'manage_guards' && <ManageGuardsScreen />}
-        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} />}
+        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} onUpdateUser={onUpdateUser} />}
       </View>
       <BottomNav
         tabs={INCHARGE_TABS}
@@ -351,11 +351,11 @@ export default function App() {
         <RealtimeProvider user={user}>
           <View style={styles.screenWrapper}>
             {user.role === 'chairman' ? (
-              <ChairApp onSignOut={handleSignOut} user={user} />
+              <ChairApp onSignOut={handleSignOut} user={user} onUpdateUser={setUser} />
             ) : user.role === 'incharge' ? (
-              <InchargeApp onSignOut={handleSignOut} user={user} />
+              <InchargeApp onSignOut={handleSignOut} user={user} onUpdateUser={setUser} />
             ) : (
-              <GuardApp onSignOut={handleSignOut} user={user} />
+              <GuardApp onSignOut={handleSignOut} user={user} onUpdateUser={setUser} />
             )}
           </View>
         </RealtimeProvider>

@@ -142,4 +142,29 @@ export const AuthService = {
 
     if (error) throw new Error(error.message);
   },
+
+  /**
+   * Update profile information (username and full name)
+   */
+  async updateProfile(username: string, fullName: string): Promise<void> {
+    const token = await AsyncStorage.getItem(SESSION_KEY);
+    if (!token) throw new Error('Not authenticated');
+
+    const { error } = await supabase.rpc('update_profile', {
+      p_token: token,
+      p_username: username,
+      p_full_name: fullName,
+    });
+
+    if (error) throw new Error(error.message);
+
+    // Update local storage
+    const userStr = await AsyncStorage.getItem(USER_KEY);
+    if (userStr) {
+      const user: AppUser = JSON.parse(userStr);
+      user.username = username;
+      user.fullName = fullName;
+      await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
+  },
 };
