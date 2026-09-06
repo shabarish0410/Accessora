@@ -309,3 +309,8 @@ end;
 $$;
 
 grant execute on function public.change_password(uuid, text, text) to anon, authenticated;
+
+-- ============================================================
+-- ENABLE REAL-TIME
+-- ============================================================
+alter publication supabase_realtime add table public.visitors;

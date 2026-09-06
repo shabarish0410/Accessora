@@ -9,8 +9,10 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSSpeechRecognitionUsageDescription": "Allow Visitor App Management to securely recognize user speech.",
-        "NSMicrophoneUsageDescription": "Allow Visitor App Management to access the microphone for speech recognition."
-      }
+        "NSMicrophoneUsageDescription": "Allow Visitor App Management to access the microphone for speech recognition.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.anonymous.visitorappmanagement"
     },
     "plugins": [
       "expo-asset",
@@ -23,7 +25,10 @@
       ]
     ],
     "android": {
-      "package": "com.anonymous.visitorappmanagement"
+      "package": "com.anonymous.visitorappmanagement",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -33,6 +38,11 @@
       "backgroundColor": "#ffffff",
       "display": "standalone",
       "startUrl": "/"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "97ab010d-4712-473f-a867-8340ed5c0afd"
+      }
     }
   }
 }

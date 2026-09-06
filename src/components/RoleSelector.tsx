@@ -29,7 +29,7 @@ export function RoleSelector({ onSelect }: { onSelect: (r: 'guard' | 'chairman')
           style={styles.logoImage}
           resizeMode="contain"
         />
-        <Text style={styles.title}>Visitor Management</Text>
+        <Text style={styles.title}>Accessora</Text>
         <Text style={styles.subtitle}>Swarna Bharathi Institute of Science & Technology</Text>
       </View>
 

@@ -118,17 +118,7 @@ export const VisitorService = {
     return true;
   },
 
-  // Subscribe to real-time changes
-  subscribe(onUpdate: (payload: any) => void) {
-    return supabase
-      .channel('public:visitors')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'visitors' }, onUpdate)
-      .subscribe();
-  },
 
-  unsubscribe(channel: any) {
-    supabase.removeChannel(channel);
-  },
 
   // Helper to get a signed URL for a private photo
   async getPhotoUrl(path: string | undefined): Promise<string | null> {
@@ -143,7 +133,7 @@ export const VisitorService = {
   }
 };
 
-function parseVisitor(row: any): Visitor {
+export function parseVisitor(row: any): Visitor {
   return {
     // Cast UUID to string/number based on existing types. We'll use the UUID string as ID.
     // NOTE: In `types.ts`, `id` is a `number`. We should update `types.ts` to `id: string | number` or just `string`.

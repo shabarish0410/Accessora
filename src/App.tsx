@@ -15,7 +15,8 @@ import { LeavingScreen } from './components/LeavingScreen';
 import { ManageGuardsScreen } from './components/InchargeScreens';
 import { BottomNav } from './components/BottomNav';
 import { GlobalBanner } from './components/GlobalBanner';
-import { VisitorService } from './services/visitors';
+import { VisitorService, parseVisitor } from './services/visitors';
+import { RealtimeProvider, useRealtime } from './providers/RealtimeProvider';
 
 const GUARD_TABS: { id: GuardTab; icon: string; label: string }[] = [
   { id: 'home', icon: '🏠', label: 'Home' },
@@ -37,6 +38,7 @@ const INCHARGE_TABS: { id: InchargeTab; icon: string; label: string }[] = [
 function useVisitors(activeOnly: boolean, onNotification?: (payload: any) => void) {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState(true);
+  const { lastEvent } = useRealtime();
 
   const refetch = async () => {
     setLoading(true);
@@ -46,19 +48,54 @@ function useVisitors(activeOnly: boolean, onNotification?: (payload: any) => voi
   };
 
   useEffect(() => {
-    let channel: any;
-    
     refetch();
+  }, [activeOnly]);
 
-    channel = VisitorService.subscribe((payload) => {
-      refetch(); 
-      if (onNotification) onNotification(payload);
+  useEffect(() => {
+    if (!lastEvent) return;
+    
+    const { eventType, new: newRow, old: oldRow } = lastEvent;
+    
+    setVisitors((prev) => {
+      if (eventType === 'INSERT') {
+        const parsed = parseVisitor(newRow);
+        // Only add if it matches the current filter
+        if (activeOnly && ['completed', 'rejected', 'exited'].includes(parsed.status)) return prev;
+        if (!activeOnly && !['completed', 'rejected', 'exited'].includes(parsed.status)) return prev;
+        return [parsed, ...prev];
+      } else if (eventType === 'UPDATE') {
+        const parsed = parseVisitor(newRow);
+        
+        // Handle transitions between active/history tabs
+        const isHistoryView = !activeOnly;
+        const isHistoryStatus = ['completed', 'rejected', 'exited'].includes(parsed.status);
+        
+        if (activeOnly && isHistoryStatus) {
+           // Moved to history, remove from active
+           return prev.filter(v => v.id !== parsed.id);
+        } else if (isHistoryView && !isHistoryStatus) {
+           // Moved to active, remove from history
+           return prev.filter(v => v.id !== parsed.id);
+        }
+        
+        // If it still belongs in the current list, update it. Or add it if it just moved into this list.
+        const exists = prev.some(v => v.id === parsed.id);
+        if (exists) {
+          return prev.map(v => v.id === parsed.id ? parsed : v);
+        } else {
+          // If it didn't exist but now belongs here, add it
+          if ((activeOnly && !isHistoryStatus) || (isHistoryView && isHistoryStatus)) {
+            return [parsed, ...prev].sort((a, b) => b.arrivalTime.getTime() - a.arrivalTime.getTime());
+          }
+        }
+      } else if (eventType === 'DELETE') {
+        return prev.filter(v => v.id !== oldRow.id);
+      }
+      return prev;
     });
 
-    return () => {
-      if (channel) VisitorService.unsubscribe(channel);
-    };
-  }, [activeOnly]);
+    if (onNotification) onNotification(lastEvent);
+  }, [lastEvent, activeOnly]);
 
   return { visitors, setVisitors, loading, refetch };
 }
@@ -311,15 +348,17 @@ export default function App() {
       {!user ? (
         <AuthScreen onSignIn={handleSignIn} />
       ) : (
-        <View style={styles.screenWrapper}>
-          {user.role === 'chairman' ? (
-            <ChairApp onSignOut={handleSignOut} user={user} />
-          ) : user.role === 'incharge' ? (
-            <InchargeApp onSignOut={handleSignOut} user={user} />
-          ) : (
-            <GuardApp onSignOut={handleSignOut} user={user} />
-          )}
-        </View>
+        <RealtimeProvider user={user}>
+          <View style={styles.screenWrapper}>
+            {user.role === 'chairman' ? (
+              <ChairApp onSignOut={handleSignOut} user={user} />
+            ) : user.role === 'incharge' ? (
+              <InchargeApp onSignOut={handleSignOut} user={user} />
+            ) : (
+              <GuardApp onSignOut={handleSignOut} user={user} />
+            )}
+          </View>
+        </RealtimeProvider>
       )}
       <Toast />
       </SafeAreaView>
