@@ -1,5 +1,5 @@
 {
-  "name": "visitor-app-management",
+  "name": "Accessora",
   "main": "expo/AppEntry.js",
   "version": "1.0.0",
   "scripts": {
@@ -8,7 +8,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build": "npx expo export"
+    "build": "npx expo export",
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
@@ -20,11 +21,13 @@
     "@supabase/supabase-js": "^2.115.0",
     "barcode-detector": "^3.2.2",
     "expo": "~57.0.0",
+    "expo-application": "~57.0.2",
     "expo-asset": "~57.0.16",
     "expo-blob": "^57.0.1",
     "expo-camera": "~57.0.4",
     "expo-speech-recognition": "^57.0.0",
     "expo-status-bar": "~57.0.1",
+    "expo-updates": "~57.0.21",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",

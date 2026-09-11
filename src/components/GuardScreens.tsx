@@ -6,6 +6,8 @@ import { VisitorRow } from './VisitorRow';
 import { AuthService, AppUser } from '../services/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
+import * as Application from 'expo-application';
+import * as Updates from 'expo-updates';
 
 export function GuardHome({
   visitors,
@@ -248,9 +250,10 @@ export function HistoryScreen({ visitors, onViewDetail, onRefresh }: { visitors:
   );
 }
 
-export function GuardSettings({ onSignOut, user, onUpdateUser }: { onSignOut: () => void; user?: AppUser; onUpdateUser?: (user: AppUser) => void }) {
+export function GuardSettings({ onSignOut, user, onUpdateUser, onCheckUpdate }: { onSignOut: () => void; user?: AppUser; onUpdateUser?: (user: AppUser) => void; onCheckUpdate?: () => Promise<void> }) {
   const [notifSound, setNotifSound] = useState(true);
   const [vibration, setVibration] = useState(true);
+  const [updateChecking, setUpdateChecking] = useState(false);
 
   // Change Password State
   const [oldPassword, setOldPassword] = useState('');
@@ -418,7 +421,52 @@ export function GuardSettings({ onSignOut, user, onUpdateUser }: { onSignOut: ()
 
       <SettingsCard title="App">
         <SettingsRow label="🌐 Language" right={<Text style={{ fontSize: 13, color: C.textSecondary }}>English</Text>} />
-        <SettingsRow label="ℹ️ About Accessora" right={<Text style={{ fontSize: 13, color: C.textSecondary }}>v1.0.0</Text>} last />
+        <SettingsRow
+          label="📦 Version"
+          right={<Text style={{ fontSize: 13, color: C.textSecondary }}>{Application.nativeApplicationVersion ?? '1.0.0'}</Text>}
+        />
+        <SettingsRow
+          label="🔨 Build"
+          right={<Text style={{ fontSize: 13, color: C.textSecondary }}>{Application.nativeBuildVersion ?? '—'}</Text>}
+        />
+        <SettingsRow
+          label="⚙️ Runtime"
+          right={<Text style={{ fontSize: 13, color: C.textSecondary }}>{Updates.runtimeVersion ?? '1.0.0'}</Text>}
+        />
+        <SettingsRow
+          label="📡 Channel"
+          right={<Text style={{ fontSize: 13, color: C.textSecondary }}>{Updates.channel ?? (__DEV__ ? 'dev' : 'embedded')}</Text>}
+        />
+        <SettingsRow
+          label="ℹ️ About Accessora"
+          right={<Text style={{ fontSize: 13, color: C.textSecondary }}>Visitor Management System</Text>}
+          last={!onCheckUpdate}
+        />
+        {onCheckUpdate && (
+          <TouchableOpacity
+            onPress={async () => {
+              if (updateChecking) return;
+              setUpdateChecking(true);
+              await onCheckUpdate();
+              setUpdateChecking(false);
+            }}
+            disabled={updateChecking}
+            style={[
+              styles.checkUpdateRow,
+              updateChecking && { opacity: 0.6 },
+            ]}
+            accessibilityLabel="Check for Updates"
+          >
+            {updateChecking ? (
+              <ActivityIndicator size="small" color={C.primary} />
+            ) : (
+              <Text style={{ fontSize: 18 }}>🔄</Text>
+            )}
+            <Text style={styles.checkUpdateText}>
+              {updateChecking ? 'Checking…' : 'Check for Updates'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </SettingsCard>
 
       <TouchableOpacity onPress={onSignOut} style={styles.signOutBtn}>
@@ -630,5 +678,19 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 4,
+  },
+  checkUpdateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+  },
+  checkUpdateText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: C.primary,
   },
 });

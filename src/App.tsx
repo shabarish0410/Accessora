@@ -17,6 +17,8 @@ import { BottomNav } from './components/BottomNav';
 import { GlobalBanner } from './components/GlobalBanner';
 import { VisitorService, parseVisitor } from './services/visitors';
 import { RealtimeProvider, useRealtime } from './providers/RealtimeProvider';
+import { useAppUpdate } from './hooks/useAppUpdate';
+import { AppUpdateModal } from './components/AppUpdateModal';
 
 const GUARD_TABS: { id: GuardTab; icon: string; label: string }[] = [
   { id: 'home', icon: '🏠', label: 'Home' },
@@ -100,7 +102,7 @@ function useVisitors(activeOnly: boolean, onNotification?: (payload: any) => voi
   return { visitors, setVisitors, loading, refetch };
 }
 
-function GuardApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void; user: AppUser; onUpdateUser: (user: AppUser) => void }) {
+function GuardApp({ onSignOut, user, onUpdateUser, onCheckUpdate }: { onSignOut: () => void; user: AppUser; onUpdateUser: (user: AppUser) => void; onCheckUpdate?: () => Promise<void> }) {
   const [tab, setTab] = useState<GuardTab>('home');
   const [screen, setScreen] = useState<'main' | 'add' | 'leaving' | 'lookup' | 'detail'>('main');
   const [activeVisitorId, setActiveVisitorId] = useState<string | number | null>(null);
@@ -177,7 +179,7 @@ function GuardApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void; us
       <View style={styles.mainContent}>
         {tab === 'home' && <GuardHome visitors={visitors} guardName={user.fullName || user.username} onAddVisitor={() => setScreen('add')} onLeaving={() => setScreen('leaving')} onLookup={() => setScreen('lookup')} onViewDetail={viewDetail} onExit={markExit} onRefresh={handleRefresh} />}
         {tab === 'history' && <HistoryScreen visitors={visitors} onViewDetail={viewDetail} onRefresh={handleRefresh} />}
-        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} onUpdateUser={onUpdateUser} />}
+        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} onUpdateUser={onUpdateUser} onCheckUpdate={onCheckUpdate} />}
       </View>
       <BottomNav
         tabs={GUARD_TABS}
@@ -191,7 +193,7 @@ function GuardApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void; us
   );
 }
 
-function ChairApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void, user: AppUser, onUpdateUser: (user: AppUser) => void }) {
+function ChairApp({ onSignOut, user, onUpdateUser, onCheckUpdate }: { onSignOut: () => void, user: AppUser, onUpdateUser: (user: AppUser) => void, onCheckUpdate?: () => Promise<void> }) {
   const [tab, setTab] = useState<ChairTab>('queue');
   const [activeVisitorId, setActiveVisitorId] = useState<string | number | null>(null);
   const [incomingVisitor, setIncomingVisitor] = useState<any | null>(null);
@@ -270,7 +272,7 @@ function ChairApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void, us
           <QueueScreen visitors={visitors} onDecide={decide as any} onExit={markExit} onViewDetail={viewDetail} onRefresh={handleRefresh} />
         )}
         {tab === 'history' && <HistoryScreen visitors={visitors} onViewDetail={viewDetail} onRefresh={handleRefresh} />}
-        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} onUpdateUser={onUpdateUser} />}
+        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} onUpdateUser={onUpdateUser} onCheckUpdate={onCheckUpdate} />}
       </View>
       <BottomNav
         tabs={CHAIR_TABS}
@@ -284,14 +286,14 @@ function ChairApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void, us
   );
 }
 
-function InchargeApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void, user: AppUser, onUpdateUser: (user: AppUser) => void }) {
+function InchargeApp({ onSignOut, user, onUpdateUser, onCheckUpdate }: { onSignOut: () => void, user: AppUser, onUpdateUser: (user: AppUser) => void, onCheckUpdate?: () => Promise<void> }) {
   const [tab, setTab] = useState<InchargeTab>('manage_guards');
 
   return (
     <View style={styles.appContainer}>
       <View style={styles.mainContent}>
         {tab === 'manage_guards' && <ManageGuardsScreen />}
-        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} onUpdateUser={onUpdateUser} />}
+        {tab === 'settings' && <GuardSettings onSignOut={onSignOut} user={user} onUpdateUser={onUpdateUser} onCheckUpdate={onCheckUpdate} />}
       </View>
       <BottomNav
         tabs={INCHARGE_TABS}
@@ -305,6 +307,7 @@ function InchargeApp({ onSignOut, user, onUpdateUser }: { onSignOut: () => void,
 export default function App() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const update = useAppUpdate();
 
   useEffect(() => {
     // Restore persisted session on app start
@@ -351,15 +354,24 @@ export default function App() {
         <RealtimeProvider user={user}>
           <View style={styles.screenWrapper}>
             {user.role === 'chairman' ? (
-              <ChairApp onSignOut={handleSignOut} user={user} onUpdateUser={setUser} />
+              <ChairApp onSignOut={handleSignOut} user={user} onUpdateUser={setUser} onCheckUpdate={update.checkForAppUpdate} />
             ) : user.role === 'incharge' ? (
-              <InchargeApp onSignOut={handleSignOut} user={user} onUpdateUser={setUser} />
+              <InchargeApp onSignOut={handleSignOut} user={user} onUpdateUser={setUser} onCheckUpdate={update.checkForAppUpdate} />
             ) : (
-              <GuardApp onSignOut={handleSignOut} user={user} onUpdateUser={setUser} />
+              <GuardApp onSignOut={handleSignOut} user={user} onUpdateUser={setUser} onCheckUpdate={update.checkForAppUpdate} />
             )}
           </View>
         </RealtimeProvider>
       )}
+      <AppUpdateModal
+        status={update.status}
+        downloadProgress={update.downloadProgress}
+        errorMessage={update.errorMessage}
+        onLater={update.dismissError}
+        onUpdateNow={update.downloadUpdate}
+        onRestart={update.applyUpdate}
+        onDismissError={update.dismissError}
+      />
       <Toast />
       </SafeAreaView>
     </SafeAreaProvider>

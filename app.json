@@ -5,6 +5,14 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/97ab010d-4712-473f-a867-8340ed5c0afd",
+      "enabled": true,
+      "checkAutomatically": "ON_ERROR_RECOVERY"
+    },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -22,12 +30,19 @@
           "microphonePermission": "Allow Visitor App Management to access the microphone for speech recognition.",
           "speechRecognitionPermission": "Allow Visitor App Management to securely recognize user speech."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Visitor App Management to access the camera to capture visitor photos."
+        }
       ]
     ],
     "android": {
       "package": "com.anonymous.visitorappmanagement",
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
       ]
     },
     "web": {
